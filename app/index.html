@@ -19,12 +19,18 @@
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <div class="flex justify-between items-center mb-8">
-            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
-                ⚡ Solana Idle Game
-            </h1>
+            <div>
+                <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                    ⚡ Solana Idle Game
+                </h1>
+                <p class="text-sm text-gray-400 mt-1">
+                    <span class="inline-block w-2 h-2 bg-orange-400 rounded-full animate-pulse"></span>
+                    Connected to Solana Devnet
+                </p>
+            </div>
             <div id="wallet-section">
                 <button id="connect-wallet" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-6 py-3 rounded-lg font-semibold transition-all shadow-lg">
-                    Connect Wallet
+                    Connect Phantom Wallet
                 </button>
                 <div id="wallet-info" class="hidden">
                     <div class="bg-white/10 backdrop-blur-lg rounded-lg px-4 py-2">
@@ -120,6 +126,16 @@
         </div>
     </div>
 
-    <script type="module" src="game.js"></script>
+    <!-- Use Solana-integrated version -->
+    <script type="module" src="solana-game.js"></script>
+
+    <!-- Info banner -->
+    <div class="fixed bottom-4 left-4 bg-purple-900/90 backdrop-blur-lg rounded-lg px-4 py-3 max-w-md">
+        <p class="text-xs text-gray-300">
+            <strong class="text-purple-300">🔗 Live on Solana Devnet</strong><br>
+            Program: <span class="font-mono text-xs">5g5ZS...BjNHPJ4</span><br>
+            Install <a href="https://phantom.app" target="_blank" class="text-purple-400 hover:text-purple-300 underline">Phantom Wallet</a> to connect
+        </p>
+    </div>
 </body>
 </html>
