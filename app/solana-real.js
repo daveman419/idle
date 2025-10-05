@@ -10,13 +10,23 @@ const GLOBAL_STATE_SEED = 'global_state';
 const PLAYER_SEED = 'player';
 const VAULT_SEED = 'vault';
 
-// Anchor instruction discriminators (first 8 bytes of SHA256 of "global:instruction_name")
-async function getInstructionDiscriminator(name) {
-    const fullName = `global:${name}`;
-    const encoder = new TextEncoder();
-    const data = encoder.encode(fullName);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    return new Uint8Array(hashBuffer).slice(0, 8);
+// Anchor instruction discriminators (pre-calculated from program IDL)
+// These are the first 8 bytes of SHA256("global:instruction_name")
+const INSTRUCTION_DISCRIMINATORS = {
+    'initialize_player': new Uint8Array([79, 249, 88, 177, 220, 62, 56, 128]),
+    'deposit_sol': new Uint8Array([108, 81, 78, 117, 125, 155, 56, 200]),
+    'withdraw_tokens': new Uint8Array([2, 4, 225, 61, 19, 182, 106, 170]),
+    'claim_rewards': new Uint8Array([4, 144, 132, 71, 116, 23, 151, 80]),
+    'purchase_generator': new Uint8Array([152, 37, 211, 59, 138, 75, 190, 192])
+};
+
+function getInstructionDiscriminator(name) {
+    const disc = INSTRUCTION_DISCRIMINATORS[name];
+    if (!disc) {
+        throw new Error(`Unknown instruction: ${name}`);
+    }
+    console.log(`Discriminator for ${name}:`, Array.from(disc));
+    return disc;
 }
 
 class SolanaIdleGameReal {
@@ -193,7 +203,7 @@ class SolanaIdleGameReal {
                 // Need to initialize player first
                 console.log('Initializing player account...');
 
-                const initDiscriminator = await getInstructionDiscriminator('initialize_player');
+                const initDiscriminator = getInstructionDiscriminator('initialize_player');
 
                 const initPlayerIx = new solanaWeb3.TransactionInstruction({
                     programId: PROGRAM_ID,
@@ -210,7 +220,7 @@ class SolanaIdleGameReal {
             }
 
             // Create deposit instruction
-            const depositDiscriminator = await getInstructionDiscriminator('deposit_sol');
+            const depositDiscriminator = getInstructionDiscriminator('deposit_sol');
             const depositData = Buffer.alloc(8 + 8); // 8 bytes discriminator + 8 bytes u64
             depositData.set(depositDiscriminator, 0);
             depositData.writeBigUInt64LE(BigInt(depositAmount), 8);
@@ -290,7 +300,7 @@ class SolanaIdleGameReal {
             );
 
             // Create withdraw instruction
-            const withdrawDiscriminator = await getInstructionDiscriminator('withdraw_tokens');
+            const withdrawDiscriminator = getInstructionDiscriminator('withdraw_tokens');
             const withdrawData = Buffer.alloc(8 + 8);
             withdrawData.set(withdrawDiscriminator, 0);
             withdrawData.writeBigUInt64LE(BigInt(withdrawAmount), 8);
@@ -354,7 +364,7 @@ class SolanaIdleGameReal {
                 PROGRAM_ID
             );
 
-            const claimDiscriminator = await getInstructionDiscriminator('claim_rewards');
+            const claimDiscriminator = getInstructionDiscriminator('claim_rewards');
 
             const claimIx = new solanaWeb3.TransactionInstruction({
                 programId: PROGRAM_ID,
@@ -418,7 +428,7 @@ class SolanaIdleGameReal {
                 PROGRAM_ID
             );
 
-            const purchaseDiscriminator = await getInstructionDiscriminator('purchase_generator');
+            const purchaseDiscriminator = getInstructionDiscriminator('purchase_generator');
             const purchaseData = Buffer.alloc(8 + 1); // 8 bytes discriminator + 1 byte u8
             purchaseData.set(purchaseDiscriminator, 0);
             purchaseData.writeUInt8(genId, 8);
