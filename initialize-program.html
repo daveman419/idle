@@ -5,6 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Initialize Solana Idle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Buffer polyfill for browser -->
+    <script>
+        class BufferExtended extends Uint8Array {
+            writeUInt8(value, offset) {
+                this[offset] = value & 0xFF;
+                return offset + 1;
+            }
+
+            writeBigUInt64LE(value, offset) {
+                const bigValue = BigInt(value);
+                for (let i = 0; i < 8; i++) {
+                    this[offset + i] = Number((bigValue >> BigInt(i * 8)) & 0xFFn);
+                }
+                return offset + 8;
+            }
+        }
+
+        class BufferPolyfill {
+            static from(data, encoding) {
+                if (data instanceof Uint8Array) {
+                    const buf = new BufferExtended(data.length);
+                    buf.set(data);
+                    return buf;
+                }
+                if (typeof data === 'string') {
+                    const encoder = new TextEncoder();
+                    const encoded = encoder.encode(data);
+                    const buf = new BufferExtended(encoded.length);
+                    buf.set(encoded);
+                    return buf;
+                }
+                if (Array.isArray(data)) {
+                    const buf = new BufferExtended(data.length);
+                    buf.set(data);
+                    return buf;
+                }
+                return new BufferExtended(0);
+            }
+
+            static alloc(size) {
+                return new BufferExtended(size);
+            }
+        }
+
+        window.Buffer = BufferPolyfill;
+    </script>
+
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
