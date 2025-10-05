@@ -5,11 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Idle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Buffer polyfill MUST load first -->
-    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.js"></script>
+    <!-- Inline Buffer polyfill - works in browser -->
     <script>
+        // Simple Buffer polyfill for Solana Web3.js
+        class BufferPolyfill {
+            static from(data, encoding) {
+                if (typeof data === 'string') {
+                    return new TextEncoder().encode(data);
+                }
+                if (data instanceof Uint8Array) {
+                    return data;
+                }
+                if (Array.isArray(data)) {
+                    return new Uint8Array(data);
+                }
+                return new Uint8Array();
+            }
+
+            static alloc(size) {
+                return new Uint8Array(size);
+            }
+
+            static concat(arrays) {
+                const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
+                const result = new Uint8Array(totalLength);
+                let offset = 0;
+                for (const arr of arrays) {
+                    result.set(arr, offset);
+                    offset += arr.length;
+                }
+                return result;
+            }
+        }
+
         // Make Buffer available globally
-        window.Buffer = buffer.Buffer;
+        window.Buffer = BufferPolyfill;
+        console.log('✅ Buffer polyfill loaded');
     </script>
     <!-- Solana Web3.js -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
