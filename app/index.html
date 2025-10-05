@@ -5,30 +5,60 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Idle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inline Buffer polyfill - works in browser -->
+    <!-- Inline Buffer polyfill with write methods -->
     <script>
-        // Simple Buffer polyfill for Solana Web3.js
+        // Extended Uint8Array with Buffer methods
+        class BufferExtended extends Uint8Array {
+            writeUInt8(value, offset) {
+                this[offset] = value & 0xFF;
+                return offset + 1;
+            }
+
+            writeUInt16LE(value, offset) {
+                this[offset] = value & 0xFF;
+                this[offset + 1] = (value >> 8) & 0xFF;
+                return offset + 2;
+            }
+
+            writeUInt32LE(value, offset) {
+                this[offset] = value & 0xFF;
+                this[offset + 1] = (value >> 8) & 0xFF;
+                this[offset + 2] = (value >> 16) & 0xFF;
+                this[offset + 3] = (value >> 24) & 0xFF;
+                return offset + 4;
+            }
+
+            writeBigUInt64LE(value, offset) {
+                const bigValue = BigInt(value);
+                for (let i = 0; i < 8; i++) {
+                    this[offset + i] = Number((bigValue >> BigInt(i * 8)) & 0xFFn);
+                }
+                return offset + 8;
+            }
+        }
+
         class BufferPolyfill {
             static from(data, encoding) {
                 if (typeof data === 'string') {
-                    return new TextEncoder().encode(data);
+                    const encoded = new TextEncoder().encode(data);
+                    return new BufferExtended(encoded);
                 }
                 if (data instanceof Uint8Array) {
-                    return data;
+                    return new BufferExtended(data);
                 }
                 if (Array.isArray(data)) {
-                    return new Uint8Array(data);
+                    return new BufferExtended(data);
                 }
-                return new Uint8Array();
+                return new BufferExtended(0);
             }
 
             static alloc(size) {
-                return new Uint8Array(size);
+                return new BufferExtended(size);
             }
 
             static concat(arrays) {
                 const totalLength = arrays.reduce((sum, arr) => sum + arr.length, 0);
-                const result = new Uint8Array(totalLength);
+                const result = new BufferExtended(totalLength);
                 let offset = 0;
                 for (const arr of arrays) {
                     result.set(arr, offset);
@@ -40,7 +70,7 @@
 
         // Make Buffer available globally
         window.Buffer = BufferPolyfill;
-        console.log('✅ Buffer polyfill loaded');
+        console.log('✅ Buffer polyfill loaded with write methods');
     </script>
     <!-- Solana Web3.js -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
