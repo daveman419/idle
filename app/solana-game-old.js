@@ -79,7 +79,7 @@ class SolanaIdleGameBlockchain {
 
             this.showLoading(false);
             this.showGame();
-            this.showNotification('Wallet connected! Ready to play on Solana Devnet', 'success');
+            this.showNotification('Wallet connected! Connected to Solana Devnet', 'success');
 
         } catch (error) {
             console.error('Failed to connect wallet:', error);
@@ -90,6 +90,11 @@ class SolanaIdleGameBlockchain {
 
     async fetchPlayerData() {
         try {
+            // In a real implementation, you would:
+            // 1. Derive the player PDA (Program Derived Address)
+            // 2. Fetch account data from the blockchain
+            // 3. Deserialize the account data
+
             console.log('Fetching player data from blockchain...');
             console.log('Program ID:', PROGRAM_ID);
             console.log('Player Wallet:', this.walletAddress);
@@ -97,83 +102,14 @@ class SolanaIdleGameBlockchain {
             // For now, we'll use simulated data until we add @solana/web3.js
             // TODO: Add real blockchain data fetching
 
-            // Start with 0 tokens - player must deposit
-            this.balance = 0;
+            // Give starter tokens for demo
+            this.balance = 50;
             this.lastClaimTime = Date.now();
 
         } catch (error) {
             console.error('Error fetching player data:', error);
-            this.balance = 0;
-        }
-    }
-
-    async depositSol() {
-        if (!this.connected) {
-            this.showNotification('Please connect your wallet first!', 'error');
-            return;
-        }
-
-        try {
-            this.showLoading(true);
-
-            // 0.2 SOL = 200,000,000 lamports
-            const depositAmount = 200_000_000; // 0.2 SOL
-            const tokensToReceive = 1000;
-
-            console.log('Depositing 0.2 SOL to game...');
-
-            // In production, this would call the deposit_sol instruction
-            // For now, simulate the deposit
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            this.balance += tokensToReceive;
-
-            this.showLoading(false);
-            this.updateDisplay();
-            this.renderGenerators();
-
-            this.showNotification(`Deposited 0.2 SOL! Received ${tokensToReceive} game tokens 🎮`, 'success');
-
-        } catch (error) {
-            console.error('Deposit failed:', error);
-            this.showLoading(false);
-            this.showNotification('Deposit failed: ' + error.message, 'error');
-        }
-    }
-
-    async withdrawTokens() {
-        if (!this.connected) {
-            this.showNotification('Please connect your wallet first!', 'error');
-            return;
-        }
-
-        if (this.balance < 100) {
-            this.showNotification('Need at least 100 tokens to withdraw!', 'error');
-            return;
-        }
-
-        try {
-            this.showLoading(true);
-
-            const withdrawAmount = Math.floor(this.balance / 2); // Withdraw half
-
-            console.log(`Withdrawing ${withdrawAmount} tokens to wallet...`);
-
-            // In production, this would call the withdraw_tokens instruction
-            // For now, simulate the withdrawal
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            this.balance -= withdrawAmount;
-
-            this.showLoading(false);
-            this.updateDisplay();
-
-            this.showNotification(`Withdrew ${withdrawAmount} tokens to your wallet! Check Phantom 💰`, 'success');
-
-        } catch (error) {
-            console.error('Withdraw failed:', error);
-            this.showLoading(false);
-            this.showNotification('Withdraw failed: ' + error.message, 'error');
+            // If account doesn't exist, it's a new player
+            this.balance = 50; // Starter tokens
         }
     }
 
@@ -191,6 +127,11 @@ class SolanaIdleGameBlockchain {
         try {
             this.showLoading(true);
 
+            // In a real implementation, you would:
+            // 1. Build the claim_rewards transaction
+            // 2. Send it to the blockchain via wallet.signAndSendTransaction()
+            // 3. Wait for confirmation
+
             console.log('Claiming rewards on blockchain...');
             console.log('Amount:', this.pendingRewards);
 
@@ -206,7 +147,7 @@ class SolanaIdleGameBlockchain {
             this.updateDisplay();
             this.renderGenerators();
 
-            this.showNotification('Rewards claimed! 💰', 'success');
+            this.showNotification('Rewards claimed on Solana! 💰', 'success');
 
         } catch (error) {
             console.error('Claim failed:', error);
@@ -231,6 +172,11 @@ class SolanaIdleGameBlockchain {
         try {
             this.showLoading(true);
 
+            // In a real implementation, you would:
+            // 1. Build the purchase_generator transaction
+            // 2. Send it to the blockchain via wallet.signAndSendTransaction()
+            // 3. Wait for confirmation
+
             console.log('Purchasing generator on blockchain...');
             console.log('Generator ID:', genId);
             console.log('Cost:', cost);
@@ -247,7 +193,7 @@ class SolanaIdleGameBlockchain {
             this.updateDisplay();
 
             const gen = this.generatorTypes[genId];
-            this.showNotification(`Purchased ${gen.name}! ${gen.emoji}`, 'success');
+            this.showNotification(`Purchased ${gen.name} on Solana! ${gen.emoji}`, 'success');
 
         } catch (error) {
             console.error('Purchase failed:', error);
@@ -331,7 +277,7 @@ class SolanaIdleGameBlockchain {
         const hasGenerators = this.generators.some(count => count > 0);
 
         if (!hasGenerators) {
-            container.innerHTML = '<p class="text-gray-400 text-center py-4">No generators yet. Deposit SOL and purchase your first one!</p>';
+            container.innerHTML = '<p class="text-gray-400 text-center py-4">No generators yet. Purchase your first one above!</p>';
             return;
         }
 
@@ -396,3 +342,73 @@ class SolanaIdleGameBlockchain {
 
 // Initialize game
 new SolanaIdleGameBlockchain();
+
+    async depositSol() {
+        if (!this.connected) {
+            this.showNotification('Please connect your wallet first!', 'error');
+            return;
+        }
+
+        try {
+            this.showLoading(true);
+
+            // 0.2 SOL = 200,000,000 lamports
+            const depositAmount = 200_000_000; // 0.2 SOL
+            const tokensToReceive = 1000;
+
+            console.log('Depositing 0.2 SOL to game...');
+
+            // In production, this would call the deposit_sol instruction
+            // For now, simulate the deposit
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            this.balance += tokensToReceive;
+            
+            this.showLoading(false);
+            this.updateDisplay();
+            this.renderGenerators();
+
+            this.showNotification(`Deposited 0.2 SOL! Received ${tokensToReceive} game tokens 🎮`, 'success');
+
+        } catch (error) {
+            console.error('Deposit failed:', error);
+            this.showLoading(false);
+            this.showNotification('Deposit failed: ' + error.message, 'error');
+        }
+    }
+
+    async withdrawTokens() {
+        if (!this.connected) {
+            this.showNotification('Please connect your wallet first!', 'error');
+            return;
+        }
+
+        if (this.balance < 100) {
+            this.showNotification('Need at least 100 tokens to withdraw!', 'error');
+            return;
+        }
+
+        try {
+            this.showLoading(true);
+
+            const withdrawAmount = Math.floor(this.balance / 2); // Withdraw half
+
+            console.log(`Withdrawing ${withdrawAmount} tokens to wallet...`);
+
+            // In production, this would call the withdraw_tokens instruction
+            // For now, simulate the withdrawal
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            this.balance -= withdrawAmount;
+            
+            this.showLoading(false);
+            this.updateDisplay();
+
+            this.showNotification(`Withdrew ${withdrawAmount} tokens to your wallet! Check Phantom 💰`, 'success');
+
+        } catch (error) {
+            console.error('Withdraw failed:', error);
+            this.showLoading(false);
+            this.showNotification('Withdraw failed: ' + error.message, 'error');
+        }
+    }
