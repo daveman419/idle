@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solana Idle Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .mining-animation {
+            animation: pulse-slow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen text-white">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600">
+                ⚡ Solana Idle Game
+            </h1>
+            <div id="wallet-section">
+                <button id="connect-wallet" class="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 px-6 py-3 rounded-lg font-semibold transition-all shadow-lg">
+                    Connect Wallet
+                </button>
+                <div id="wallet-info" class="hidden">
+                    <div class="bg-white/10 backdrop-blur-lg rounded-lg px-4 py-2">
+                        <p class="text-sm text-gray-300">Wallet Connected</p>
+                        <p id="wallet-address" class="font-mono text-xs"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Not Connected State -->
+        <div id="not-connected" class="text-center py-20">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-12 max-w-2xl mx-auto">
+                <h2 class="text-3xl font-bold mb-4">Welcome to Solana Idle Game!</h2>
+                <p class="text-gray-300 mb-8">Connect your Solana wallet to start mining tokens automatically</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
+                    <div class="bg-purple-500/20 p-4 rounded-lg">
+                        <h3 class="font-bold mb-2">⚙️ Auto Mining</h3>
+                        <p class="text-sm text-gray-300">Earn tokens automatically even when offline</p>
+                    </div>
+                    <div class="bg-blue-500/20 p-4 rounded-lg">
+                        <h3 class="font-bold mb-2">🚀 Upgrades</h3>
+                        <p class="text-sm text-gray-300">Purchase generators to boost production</p>
+                    </div>
+                    <div class="bg-pink-500/20 p-4 rounded-lg">
+                        <h3 class="font-bold mb-2">💎 On-Chain</h3>
+                        <p class="text-sm text-gray-300">All progress saved on Solana blockchain</p>
+                    </div>
+                    <div class="bg-indigo-500/20 p-4 rounded-lg">
+                        <h3 class="font-bold mb-2">💰 Real Tokens</h3>
+                        <p class="text-sm text-gray-300">Earn SPL tokens you can trade</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Connected State -->
+        <div id="game-container" class="hidden">
+            <!-- Stats Dashboard -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+                    <p class="text-sm text-gray-300 mb-1">Balance</p>
+                    <p id="balance" class="text-3xl font-bold">0</p>
+                    <p class="text-xs text-gray-400 mt-1">tokens</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+                    <p class="text-sm text-gray-300 mb-1">Pending Rewards</p>
+                    <p id="pending-rewards" class="text-3xl font-bold mining-animation">0</p>
+                    <p class="text-xs text-gray-400 mt-1">tokens</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+                    <p class="text-sm text-gray-300 mb-1">Production Rate</p>
+                    <p id="production-rate" class="text-3xl font-bold">0</p>
+                    <p class="text-xs text-gray-400 mt-1">tokens/sec</p>
+                </div>
+                <div class="bg-white/10 backdrop-blur-lg rounded-xl p-6">
+                    <p class="text-sm text-gray-300 mb-1">Total Earned</p>
+                    <p id="total-earned" class="text-3xl font-bold">0</p>
+                    <p class="text-xs text-gray-400 mt-1">all time</p>
+                </div>
+            </div>
+
+            <!-- Claim Button -->
+            <div class="text-center mb-8">
+                <button id="claim-btn" class="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 px-8 py-4 rounded-xl font-bold text-lg transition-all shadow-lg transform hover:scale-105">
+                    💰 Claim Rewards
+                </button>
+            </div>
+
+            <!-- Generators Shop -->
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8">
+                <h2 class="text-2xl font-bold mb-6">🏭 Generator Shop</h2>
+                <div id="generators-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- Generators will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Player Stats -->
+            <div class="mt-8 bg-white/10 backdrop-blur-lg rounded-2xl p-8">
+                <h2 class="text-2xl font-bold mb-6">📊 Your Generators</h2>
+                <div id="owned-generators" class="space-y-2">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div class="bg-white/10 rounded-2xl p-8 text-center">
+                <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-white mx-auto mb-4"></div>
+                <p class="text-xl font-semibold">Processing transaction...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="game.js"></script>
+</body>
+</html>
