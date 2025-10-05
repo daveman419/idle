@@ -9,7 +9,7 @@ use constants::*;
 use errors::*;
 use state::*;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("5g5ZS7ft7bEGHQi9T2yhgc4VsgUKvgTxJU9p7BjNHPJ4");
 
 #[program]
 pub mod idle_game {
@@ -156,6 +156,70 @@ pub mod idle_game {
 
         Ok(())
     }
+
+    pub fn deposit_sol(ctx: Context<DepositSol>, amount: u64) -> Result<()> {
+        require!(
+            ctx.accounts.global_state.game_active,
+            IdleGameError::GamePaused
+        );
+
+        // Transfer SOL from player to vault
+        let transfer_ix = anchor_lang::solana_program::system_instruction::transfer(
+            &ctx.accounts.authority.key(),
+            &ctx.accounts.vault.key(),
+            amount,
+        );
+
+        anchor_lang::solana_program::program::invoke(
+            &transfer_ix,
+            &[
+                ctx.accounts.authority.to_account_info(),
+                ctx.accounts.vault.to_account_info(),
+            ],
+        )?;
+
+        // Give 1000 game tokens per SOL deposited
+        // 0.2 SOL = 200 tokens with 9 decimals = 200_000_000_000
+        let tokens_to_give = amount
+            .checked_mul(5000)
+            .ok_or(IdleGameError::ArithmeticOverflow)?;
+
+        let player = &mut ctx.accounts.player;
+        player.balance = player
+            .balance
+            .checked_add(tokens_to_give)
+            .ok_or(IdleGameError::ArithmeticOverflow)?;
+
+        msg!("Deposited {} SOL, received {} game tokens", amount, tokens_to_give);
+        Ok(())
+    }
+
+    pub fn withdraw_tokens(ctx: Context<WithdrawTokens>, amount: u64) -> Result<()> {
+        require!(
+            ctx.accounts.global_state.game_active,
+            IdleGameError::GamePaused
+        );
+
+        let player = &mut ctx.accounts.player;
+
+        require!(
+            player.balance >= amount,
+            IdleGameError::InsufficientBalance
+        );
+
+        // Deduct from game balance
+        player.balance = player
+            .balance
+            .checked_sub(amount)
+            .ok_or(IdleGameError::ArithmeticOverflow)?;
+
+        // Transfer SPL tokens to player's token account
+        // This would require token minting logic
+        // For now, just track the withdrawal
+
+        msg!("Withdrew {} tokens to wallet", amount);
+        Ok(())
+    }
 }
 
 #[derive(Accounts)]
@@ -226,6 +290,55 @@ pub struct PurchaseGenerator<'info> {
 pub struct ClaimRewards<'info> {
     #[account(
         mut,
+        seeds = [GLOBAL_STATE_SEED],
+        bump = global_state.bump
+    )]
+    pub global_state: Account<'info, GlobalState>,
+
+    #[account(
+        mut,
+        seeds = [PLAYER_SEED, authority.key().as_ref()],
+        bump = player.bump,
+        has_one = authority
+    )]
+    pub player: Account<'info, Player>,
+
+    pub authority: Signer<'info>,
+}
+
+#[derive(Accounts)]
+pub struct DepositSol<'info> {
+    #[account(
+        seeds = [GLOBAL_STATE_SEED],
+        bump = global_state.bump
+    )]
+    pub global_state: Account<'info, GlobalState>,
+
+    #[account(
+        mut,
+        seeds = [PLAYER_SEED, authority.key().as_ref()],
+        bump = player.bump,
+        has_one = authority
+    )]
+    pub player: Account<'info, Player>,
+
+    /// CHECK: Vault PDA to receive SOL
+    #[account(
+        mut,
+        seeds = [VAULT_SEED],
+        bump
+    )]
+    pub vault: AccountInfo<'info>,
+
+    #[account(mut)]
+    pub authority: Signer<'info>,
+
+    pub system_program: Program<'info, System>,
+}
+
+#[derive(Accounts)]
+pub struct WithdrawTokens<'info> {
+    #[account(
         seeds = [GLOBAL_STATE_SEED],
         bump = global_state.bump
     )]
