@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Idle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Solana Web3.js -->
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+    <!-- Buffer polyfill for browser -->
+    <script src="https://unpkg.com/buffer@6.0.3/index.js"></script>
     <style>
         @keyframes pulse-slow {
             0%, 100% { opacity: 1; }
@@ -33,9 +37,14 @@
                     Connect Phantom Wallet
                 </button>
                 <div id="wallet-info" class="hidden">
-                    <div class="bg-white/10 backdrop-blur-lg rounded-lg px-4 py-2">
-                        <p class="text-sm text-gray-300">Wallet Connected</p>
-                        <p id="wallet-address" class="font-mono text-xs"></p>
+                    <div class="bg-white/10 backdrop-blur-lg rounded-lg px-4 py-2 flex items-center gap-3">
+                        <div>
+                            <p class="text-sm text-gray-300">Wallet Connected</p>
+                            <p id="wallet-address" class="font-mono text-xs"></p>
+                        </div>
+                        <button id="disconnect-wallet" class="bg-red-500/20 hover:bg-red-500/40 px-3 py-1 rounded text-xs transition-all">
+                            Disconnect
+                        </button>
                     </div>
                 </div>
             </div>
@@ -132,8 +141,8 @@
         </div>
     </div>
 
-    <!-- Use Solana-integrated version -->
-    <script type="module" src="solana-game.js"></script>
+    <!-- Use REAL Solana blockchain integration -->
+    <script src="solana-real.js"></script>
 
     <!-- Info banner -->
     <div class="fixed bottom-4 left-4 bg-purple-900/90 backdrop-blur-lg rounded-lg px-4 py-3 max-w-md">
