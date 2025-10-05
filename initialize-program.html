@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialize Solana Idle Game</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+    <div class="max-w-2xl mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-6">Initialize Solana Idle Game Program</h1>
+
+        <div class="bg-gray-800 rounded-lg p-6 mb-6">
+            <p class="mb-4">⚠️ This is a ONE-TIME setup. Run this once to initialize the program.</p>
+            <p class="text-gray-400 text-sm">Program ID: 5g5ZS7ft7bEGHQi9T2yhgc4VsgUKvgTxJU9p7BjNHPJ4</p>
+            <p class="text-gray-400 text-sm">Token Mint: 3s2NHypjNTCenkuUVZ8K23VCWdu6JqHJensgo9UbmfcB</p>
+        </div>
+
+        <button id="init-btn" class="bg-purple-600 hover:bg-purple-700 px-8 py-4 rounded-lg font-bold text-lg w-full mb-4">
+            Initialize Program
+        </button>
+
+        <div id="status" class="bg-gray-800 rounded-lg p-4 hidden">
+            <pre id="output" class="text-sm text-green-400"></pre>
+        </div>
+    </div>
+
+    <script>
+        const PROGRAM_ID = new solanaWeb3.PublicKey('5g5ZS7ft7bEGHQi9T2yhgc4VsgUKvgTxJU9p7BjNHPJ4');
+        const TOKEN_MINT = new solanaWeb3.PublicKey('3s2NHypjNTCenkuUVZ8K23VCWdu6JqHJensgo9UbmfcB');
+        const DEVNET_RPC = 'https://api.devnet.solana.com';
+        const connection = new solanaWeb3.Connection(DEVNET_RPC, 'confirmed');
+
+        const GLOBAL_STATE_SEED = 'global_state';
+
+        // Initialize instruction discriminator
+        const INIT_DISCRIMINATOR = new Uint8Array([175, 175, 109, 31, 13, 152, 155, 237]);
+
+        document.getElementById('init-btn').addEventListener('click', async () => {
+            try {
+                log('Connecting to Phantom wallet...');
+
+                if (!window.solana) {
+                    throw new Error('Please install Phantom wallet');
+                }
+
+                const resp = await window.solana.connect();
+                const wallet = resp.publicKey;
+
+                log('✅ Connected: ' + wallet.toString());
+
+                // Derive global state PDA
+                const [globalStatePDA, bump] = await solanaWeb3.PublicKey.findProgramAddress(
+                    [Buffer.from(GLOBAL_STATE_SEED)],
+                    PROGRAM_ID
+                );
+
+                log('Global State PDA: ' + globalStatePDA.toString());
+
+                // Check if already initialized
+                const account = await connection.getAccountInfo(globalStatePDA);
+                if (account) {
+                    log('✅ Program already initialized!');
+                    log('Global State: ' + globalStatePDA.toString());
+                    return;
+                }
+
+                log('Creating initialization transaction...');
+
+                // Create initialize instruction
+                const initIx = new solanaWeb3.TransactionInstruction({
+                    programId: PROGRAM_ID,
+                    keys: [
+                        { pubkey: globalStatePDA, isSigner: false, isWritable: true },
+                        { pubkey: TOKEN_MINT, isSigner: false, isWritable: true },
+                        { pubkey: wallet, isSigner: true, isWritable: true },
+                        { pubkey: solanaWeb3.SystemProgram.programId, isSigner: false, isWritable: false },
+                        { pubkey: new solanaWeb3.PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'), isSigner: false, isWritable: false },
+                    ],
+                    data: Buffer.from(INIT_DISCRIMINATOR)
+                });
+
+                const tx = new solanaWeb3.Transaction().add(initIx);
+                tx.feePayer = wallet;
+                tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+
+                log('Signing transaction...');
+                const signed = await window.solana.signTransaction(tx);
+
+                log('Sending transaction...');
+                const txid = await connection.sendRawTransaction(signed.serialize());
+
+                log('Transaction sent: ' + txid);
+                log('Waiting for confirmation...');
+
+                await connection.confirmTransaction(txid, 'confirmed');
+
+                log('✅ Program initialized successfully!');
+                log('Transaction: https://explorer.solana.com/tx/' + txid + '?cluster=devnet');
+                log('');
+                log('🎮 You can now use the game at: https://daveman419.github.io/idle/app/');
+
+            } catch (error) {
+                log('❌ Error: ' + error.message);
+                console.error(error);
+            }
+        });
+
+        function log(msg) {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            status.classList.remove('hidden');
+            output.textContent += msg + '\n';
+            console.log(msg);
+        }
+    </script>
+</body>
+</html>
