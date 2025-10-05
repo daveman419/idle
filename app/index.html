@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solana Idle Game</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Buffer polyfill MUST load first -->
+    <script src="https://cdn.jsdelivr.net/npm/buffer@6.0.3/index.js"></script>
+    <script>
+        // Make Buffer available globally
+        window.Buffer = buffer.Buffer;
+    </script>
     <!-- Solana Web3.js -->
     <script src="https://unpkg.com/@solana/web3.js@latest/lib/index.iife.min.js"></script>
-    <!-- Buffer polyfill for browser -->
-    <script src="https://unpkg.com/buffer@6.0.3/index.js"></script>
     <style>
         @keyframes pulse-slow {
             0%, 100% { opacity: 1; }
