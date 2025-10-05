@@ -10,6 +10,15 @@ const GLOBAL_STATE_SEED = 'global_state';
 const PLAYER_SEED = 'player';
 const VAULT_SEED = 'vault';
 
+// Anchor instruction discriminators (first 8 bytes of SHA256 of "global:instruction_name")
+async function getInstructionDiscriminator(name) {
+    const fullName = `global:${name}`;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(fullName);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    return new Uint8Array(hashBuffer).slice(0, 8);
+}
+
 class SolanaIdleGameReal {
     constructor() {
         this.wallet = null;
@@ -184,6 +193,8 @@ class SolanaIdleGameReal {
                 // Need to initialize player first
                 console.log('Initializing player account...');
 
+                const initDiscriminator = await getInstructionDiscriminator('initialize_player');
+
                 const initPlayerIx = new solanaWeb3.TransactionInstruction({
                     programId: PROGRAM_ID,
                     keys: [
@@ -192,16 +203,17 @@ class SolanaIdleGameReal {
                         { pubkey: this.walletAddress, isSigner: true, isWritable: true },
                         { pubkey: solanaWeb3.SystemProgram.programId, isSigner: false, isWritable: false },
                     ],
-                    data: Buffer.from([1]) // initialize_player instruction discriminator
+                    data: Buffer.from(initDiscriminator)
                 });
 
                 tx = new solanaWeb3.Transaction().add(initPlayerIx);
             }
 
             // Create deposit instruction
-            const depositData = Buffer.alloc(9);
-            depositData.writeUInt8(4, 0); // deposit_sol discriminator
-            depositData.writeBigUInt64LE(BigInt(depositAmount), 1);
+            const depositDiscriminator = await getInstructionDiscriminator('deposit_sol');
+            const depositData = Buffer.alloc(8 + 8); // 8 bytes discriminator + 8 bytes u64
+            depositData.set(depositDiscriminator, 0);
+            depositData.writeBigUInt64LE(BigInt(depositAmount), 8);
 
             const depositIx = new solanaWeb3.TransactionInstruction({
                 programId: PROGRAM_ID,
@@ -278,9 +290,10 @@ class SolanaIdleGameReal {
             );
 
             // Create withdraw instruction
-            const withdrawData = Buffer.alloc(9);
-            withdrawData.writeUInt8(5, 0); // withdraw_tokens discriminator
-            withdrawData.writeBigUInt64LE(BigInt(withdrawAmount), 1);
+            const withdrawDiscriminator = await getInstructionDiscriminator('withdraw_tokens');
+            const withdrawData = Buffer.alloc(8 + 8);
+            withdrawData.set(withdrawDiscriminator, 0);
+            withdrawData.writeBigUInt64LE(BigInt(withdrawAmount), 8);
 
             const withdrawIx = new solanaWeb3.TransactionInstruction({
                 programId: PROGRAM_ID,
@@ -341,6 +354,8 @@ class SolanaIdleGameReal {
                 PROGRAM_ID
             );
 
+            const claimDiscriminator = await getInstructionDiscriminator('claim_rewards');
+
             const claimIx = new solanaWeb3.TransactionInstruction({
                 programId: PROGRAM_ID,
                 keys: [
@@ -348,7 +363,7 @@ class SolanaIdleGameReal {
                     { pubkey: playerPDA, isSigner: false, isWritable: true },
                     { pubkey: this.walletAddress, isSigner: true, isWritable: false },
                 ],
-                data: Buffer.from([3]) // claim_rewards discriminator
+                data: Buffer.from(claimDiscriminator)
             });
 
             const tx = new solanaWeb3.Transaction().add(claimIx);
@@ -403,9 +418,10 @@ class SolanaIdleGameReal {
                 PROGRAM_ID
             );
 
-            const purchaseData = Buffer.alloc(2);
-            purchaseData.writeUInt8(2, 0); // purchase_generator discriminator
-            purchaseData.writeUInt8(genId, 1);
+            const purchaseDiscriminator = await getInstructionDiscriminator('purchase_generator');
+            const purchaseData = Buffer.alloc(8 + 1); // 8 bytes discriminator + 1 byte u8
+            purchaseData.set(purchaseDiscriminator, 0);
+            purchaseData.writeUInt8(genId, 8);
 
             const purchaseIx = new solanaWeb3.TransactionInstruction({
                 programId: PROGRAM_ID,
